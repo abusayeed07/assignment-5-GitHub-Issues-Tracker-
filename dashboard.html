@@ -4,9 +4,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Issues Tracker - Dashboard</title>
+    <title>GItHub Issues Tracker | Dashboard</title>
+    <!-- font  -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap" rel="stylesheet">
+
+    <!-- daisyUi & Tailwind css  -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="style.css">
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.23/dist/full.css" rel="stylesheet" type="text/css" />
+
+    <!-- font Awesome  -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+        integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <style>
+        body {
+            font-family: "Geist", sans-serif;
+        }
+    </style>
 </head>
 
 <body class="bg-gray-50">
@@ -29,12 +46,14 @@
                             class="w-full px-4 py-2 pr-20 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                             placeholder="Search issues...">
                         <button id="searchBtn"
-                            class="absolute right-1 top-1 px-4 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                            Search
+                            class="absolute right-1 top-1 px-4 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700"><i class="fa-brands fa-sistrix"></i> Search
                         </button>
                     </div>
                 </div>
 
+                <div>
+                    <button class="btn btn-primary">New Issue</button>
+                </div>
                 <!-- Logout -->
                 <button id="logoutBtn" class="text-gray-600 hover:text-gray-800">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
