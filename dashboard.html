@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issues Tracker - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="bg-gray-50">
+    <!-- Navbar -->
+    <nav class="bg-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                        <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path
+                                d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.03-2.682-.103-.253-.447-1.27.098-2.646 0 0 .84-.269 2.75 1.025.8-.223 1.65-.334 2.5-.334.85 0 1.7.111 2.5.334 1.91-1.294 2.75-1.025 2.75-1.025.545 1.376.201 2.393.099 2.646.64.698 1.03 1.591 1.03 2.682 0 3.841-2.337 4.687-4.565 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.161 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
+                        </svg>
+                    </div>
+                    <span class="font-bold text-xl text-gray-800">IssueTracker</span>
+                </div>
+
+                <!-- Search -->
+                <div class="flex-1 max-w-lg mx-4">
+                    <div class="relative">
+                        <input type="text" id="searchInput"
+                            class="w-full px-4 py-2 pr-20 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            placeholder="Search issues...">
+                        <button id="searchBtn"
+                            class="absolute right-1 top-1 px-4 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                            Search
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Logout -->
+                <button id="logoutBtn" class="text-gray-600 hover:text-gray-800">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Tabs -->
+        <div class="border-b border-gray-200">
+            <nav class="flex space-x-8">
+                <button class="tab-btn active py-2 px-1 border-b-2 border-blue-500 text-blue-600 font-medium"
+                    data-filter="all">
+                    All
+                </button>
+                <button
+                    class="tab-btn py-2 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium"
+                    data-filter="open">
+                    Open
+                </button>
+                <button
+                    class="tab-btn py-2 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium"
+                    data-filter="closed">
+                    Closed
+                </button>
+            </nav>
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="flex flex-wrap items-center justify-between py-4">
+            <div class="flex items-center space-x-4">
+                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                    </path>
+                </svg>
+                <span class="text-gray-700">
+                    <span id="issueCount">0</span> issues
+                </span>
+                <span class="text-gray-300">|</span>
+                <span class="text-sm text-gray-500" id="statsText">Showing all issues</span>
+            </div>
+            <div class="flex items-center space-x-3">
+                <span class="flex items-center text-sm">
+                    <span class="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
+                    <span id="openCount">0</span> Open
+                </span>
+                <span class="flex items-center text-sm">
+                    <span class="w-2 h-2 bg-purple-500 rounded-full mr-1"></span>
+                    <span id="closedCount">0</span> Closed
+                </span>
+            </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loadingSpinner" class="hidden">
+            <div class="flex justify-center items-center py-20">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+        </div>
+
+        <!-- Issues Grid -->
+        <div id="issuesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Issues will be loaded here -->
+        </div>
+    </main>
+
+    <!-- Modal -->
+    <div id="issueModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <h2 class="text-2xl font-bold text-gray-800" id="modalTitle"></h2>
+                    <button id="closeModal" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div id="modalContent" class="space-y-4">
+                    <!-- Modal content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="scripts/dashbosrd.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Issues Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.23/dist/full.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body class="bg-white min-h-screen flex items-center justify-center p-4">
+    <div class="card w-full max-w-[520px] bg-base-200 shadow-2xl">
+        <div class="card-body">
+            <!-- Header exactly as in image -->
+            <div class="items-center mx-auto">
+                <img src="./assets/github-logo.png" alt="" class="w-[100px] h-[100px] mx-auto mb-6">
+                <h2 class="text-2xl font-bold">GitHub Issues Tracker</h2>
+                <p class="text-sm mb-4 text-center">Sign in to manage your issues</p>
+            </div>
+
+
+            <!-- Form fields exactly as described -->
+            <form id="loginForm" class="space-y-6">
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text text-xl">Username</span>
+                    </label>
+                    <input type="text" placeholder="Enter Username"
+                        class="input input-bordered bg-base-200 text-base-content" id="username">
+                    <label class="label">
+                        <span class="label-text-alt text-base-content/60 text-[#4A00FF]">Default: admin</span>
+                    </label>
+                </div>
+
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text text-xl">Password</span>
+                    </label>
+                    <input type="password" placeholder="Enter Password"
+                        class="input input-bordered bg-base-200 text-base-content" id="password">
+                    <label class="label">
+                        <span class="label-text-alt text-base-content/60 text-[#4A00FF]">Default: admin123</span>
+                    </label>
+                </div>
+
+                <!-- Sign In button -->
+                <button class="btn w-full mt-2 text-xl bg-[#4A00FF] hover:bg-[#3a00cc] text-white">Sign In</button>
+
+            </form>
+
+
+
+            <!-- OR divider -->
+            <div class="divider">OR</div>
+
+            <!-- Demo Credentials exactly as in image -->
+            <div class="border border-base-300 rounded-lg p-4 bg-base-200 text-base-content mx-auto">
+                <p class="font-medium mb-5 text-[#64748B]">Demo Credentials:</p>
+                <div class="space-y-1">
+                    <p><span class="font-bold">Username:</span> admin</p>
+                    <p><span class="font-bold">Password:</span> admin123</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="./scripts/script.js"></script>
+</body>
+
+</html>
