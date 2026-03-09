@@ -1,359 +1,476 @@
-// ==================== API CONFIGURATION ====================
-const API_BASE = 'https://phi-lab-server.vercel.app/api/v1/lab';
+// ==================== SUPER SIMPLE ISSUE TRACKER ====================
+// This is made for beginners - easy to read and understand!
 
-// ==================== STATE ====================
-let currentFilter = 'all';
-let issues = [];
-let filteredIssues = [];
+// ==================== PART 1: SETTINGS ====================
+// The website address where our data lives
+const SERVER = 'https://phi-lab-server.vercel.app/api/v1/lab';
 
-// ==================== AUTH CHECK ====================
-// For testing, you can comment this out or set a dummy value
-if (!localStorage.getItem('isAuthenticated')) {
-    // For testing purposes, set a dummy value
-    localStorage.setItem('isAuthenticated', 'true');
-    window.location.href = 'index.html'; // Uncomment for production
-}
+// ==================== PART 2: OUR DATA BOXES ====================
+let masterList = [];        // Holds ALL issues from server
+let showingList = [];       // Holds issues we want to show now
+let currentTab = 'all';      // Which tab is selected (all/open/closed)
 
-// ==================== DOM ELEMENTS ====================
-const issuesGrid = document.getElementById('issuesGrid');
-const loadingSpinner = document.getElementById('loadingSpinner');
-const issueCount = document.getElementById('issueCount');
-const openCount = document.getElementById('openCount');
-const closedCount = document.getElementById('closedCount');
-const statsText = document.getElementById('statsText');
-const searchInput = document.getElementById('searchInput');
-const searchBtn = document.getElementById('searchBtn');
-const logoutBtn = document.getElementById('logoutBtn');
-const modal = document.getElementById('issueModal');
-const modalTitle = document.getElementById('modalTitle');
-const modalContent = document.getElementById('modalContent');
-const closeModal = document.getElementById('closeModal');
-const tabBtns = document.querySelectorAll('.tab-btn');
+// ==================== PART 3: GRAB ALL PAGE ELEMENTS ====================
+// Think of these as remote controls for different parts of the page
+const page = {
+    // Main areas
+    grid: document.getElementById('issuesGrid'),        // Where issues go
+    spinner: document.getElementById('loadingSpinner'), // Loading animation
 
-// ==================== EVENT LISTENERS ====================
-tabBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-        tabBtns.forEach(b => {
-            b.classList.remove('active', 'border-blue-500', 'text-blue-600');
-            b.classList.add('border-transparent', 'text-gray-500');
-        });
-        btn.classList.add('active', 'border-blue-500', 'text-blue-600');
-        btn.classList.remove('border-transparent', 'text-gray-500');
+    // Numbers at top
+    total: document.getElementById('issueCount'),       // Total count
+    openNum: document.getElementById('openCount'),      // Open count
+    closedNum: document.getElementById('closedCount'),  // Closed count
+    status: document.getElementById('statsText'),       // Status message
 
-        currentFilter = btn.dataset.filter;
-        filterIssues();
-    });
-});
+    // Search stuff
+    searchBox: document.getElementById('searchInput'),
+    searchBtn: document.getElementById('searchBtn'),
 
-searchBtn.addEventListener('click', performSearch);
-searchInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') performSearch();
-});
+    // Logout button
+    logout: document.getElementById('logoutBtn'),
 
-logoutBtn.addEventListener('click', () => {
-    localStorage.removeItem('isAuthenticated');
-    alert('Logged out successfully!');
-    window.location.href = 'index.html'; // Uncomment for production
-});
+    // Popup window (modal)
+    popup: document.getElementById('issueModal'),
+    popupTitle: document.getElementById('modalTitle'),
+    popupText: document.getElementById('modalContent'),
+    closePopup: document.getElementById('closeModal'),
 
-closeModal.addEventListener('click', () => {
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
-});
+    // Filter buttons at top
+    tabButtons: document.querySelectorAll('.tab-btn')
+};
 
-modal.addEventListener('click', (e) => {
-    if (e.target === modal) {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-    }
-});
+// ==================== PART 4: WHAT HAPPENS WHEN PAGE LOADS ====================
+// When the page finishes loading, run getIssues()
+document.addEventListener('DOMContentLoaded', getIssues);
 
-// Load issues on page load
-document.addEventListener('DOMContentLoaded', loadIssues);
+// ==================== PART 5: GET ISSUES FROM SERVER ====================
+// This function talks to the server and gets all issues
+async function getIssues() {
+    // Step 1: Show loading spinner
+    toggleLoading(true);
 
-// ==================== CORE FUNCTIONS ====================
-
-// Load all issues from API
-async function loadIssues() {
-    showLoading(true);
-
+    // Step 2: Try to get data from server
     try {
-        const response = await fetch(`${API_BASE}/issues`);
-        const data = await response.json();
+        // Ask server for issues (like asking a friend for notes)
+        let response = await fetch(SERVER + '/issues');
 
-        // FIXED: Check for status === 'success' instead of data.success
+        // Turn the response into something we can use
+        let data = await response.json();
+
+        // Step 3: Check if we got the data successfully
         if (data.status === 'success') {
-            issues = data.data;
-            updateStats();
-            filterIssues();
+            // Save all issues in our master list
+            masterList = data.data;
+
+            // Update the numbers at top
+            updateCounts();
+
+            // Show the issues on screen
+            updateDisplay();
         } else {
-            showError('Failed to load issues: ' + (data.message || 'Unknown error'));
+            // Something went wrong
+            alert('Could not get issues: ' + (data.message || 'Unknown error'));
         }
     } catch (error) {
-        console.error('Error loading issues:', error);
-        showError('Failed to load issues. Please check your connection.');
+        // Network error or something broke
+        alert('Failed to connect to server. Check your internet.');
+        console.log('Error details:', error);
     } finally {
-        showLoading(false);
+        // Step 4: Hide loading spinner (whether we got data or not)
+        toggleLoading(false);
     }
 }
 
-// Filter issues based on current filter
-function filterIssues() {
-    switch (currentFilter) {
-        case 'open':
-            filteredIssues = issues.filter(issue => issue.status.toLowerCase() === 'open');
-            statsText.textContent = 'Showing open issues';
-            break;
-        case 'closed':
-            filteredIssues = issues.filter(issue => issue.status.toLowerCase() === 'closed');
-            statsText.textContent = 'Showing closed issues';
-            break;
-        default:
-            filteredIssues = [...issues];
-            statsText.textContent = 'Showing all issues';
+// ==================== PART 6: SHOW/HIDE LOADING ====================
+function toggleLoading(showIt) {
+    if (showIt) {
+        // Show spinner, hide issues
+        page.spinner.classList.remove('hidden');
+        page.grid.classList.add('hidden');
+    } else {
+        // Hide spinner, show issues
+        page.spinner.classList.add('hidden');
+        page.grid.classList.remove('hidden');
     }
-
-    displayIssues(filteredIssues);
 }
 
-// Display issues in the grid
-function displayIssues(issuesToShow) {
-    if (!issuesToShow || issuesToShow.length === 0) {
-        issuesGrid.innerHTML = `
-                    <div class="col-span-full text-center py-12">
-                        <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                        <p class="text-gray-500 text-lg">No issues found</p>
-                    </div>
-                `;
+// ==================== PART 7: UPDATE NUMBERS AT TOP ====================
+function updateCounts() {
+    // Count how many are open
+    let openTotal = 0;
+    let closedTotal = 0;
+
+    // Loop through all issues and count them
+    for (let i = 0; i < masterList.length; i++) {
+        let oneIssue = masterList[i];
+        if (oneIssue.status.toLowerCase() === 'open') {
+            openTotal = openTotal + 1;
+        } else {
+            closedTotal = closedTotal + 1;
+        }
+    }
+
+    // Put the numbers on screen
+    page.total.textContent = masterList.length;
+    page.openNum.textContent = openTotal;
+    page.closedNum.textContent = closedTotal;
+}
+
+// ==================== PART 8: DECIDE WHAT TO SHOW ====================
+function updateDisplay() {
+    // Clear the showing list
+    showingList = [];
+
+    // Decide which issues to show based on selected tab
+    if (currentTab === 'open') {
+        // Show only open issues
+        for (let i = 0; i < masterList.length; i++) {
+            if (masterList[i].status.toLowerCase() === 'open') {
+                showingList.push(masterList[i]);
+            }
+        }
+        page.status.textContent = 'Showing open issues';
+    }
+    else if (currentTab === 'closed') {
+        // Show only closed issues
+        for (let i = 0; i < masterList.length; i++) {
+            if (masterList[i].status.toLowerCase() === 'closed') {
+                showingList.push(masterList[i]);
+            }
+        }
+        page.status.textContent = 'Showing closed issues';
+    }
+    else {
+        // Show all issues
+        for (let i = 0; i < masterList.length; i++) {
+            showingList.push(masterList[i]);
+        }
+        page.status.textContent = 'Showing all issues';
+    }
+
+    // Now put them on screen
+    showIssues(showingList);
+}
+
+// ==================== PART 9: PUT ISSUES ON SCREEN ====================
+function showIssues(issuesToShow) {
+    // If no issues to show, display empty message
+    if (issuesToShow.length === 0) {
+        page.grid.innerHTML = `
+            <div style="text-align: center; padding: 3rem; grid-column: span 4;">
+                <p style="color: gray; font-size: 1.2rem;">No issues found</p>
+            </div>
+        `;
         return;
     }
 
-    issuesGrid.innerHTML = issuesToShow.map(issue => createIssueCard(issue)).join('');
+    // Start with empty string, then add each issue
+    let allCards = '';
 
-    document.querySelectorAll('.issue-card').forEach(card => {
-        card.addEventListener('click', () => showIssueDetails(parseInt(card.dataset.id)));
-    });
+    // Loop through each issue and make a card
+    for (let i = 0; i < issuesToShow.length; i++) {
+        let issue = issuesToShow[i];
+        allCards = allCards + makeCard(issue);
+    }
+
+    // Put all cards on the page at once
+    page.grid.innerHTML = allCards;
+
+    // Make each card clickable
+    let cards = document.querySelectorAll('.issue-card');
+    for (let i = 0; i < cards.length; i++) {
+        let card = cards[i];
+        let id = card.dataset.id;
+
+        card.onclick = function () {
+            showDetails(id);
+        };
+    }
 }
 
-// Create an issue card HTML
-function createIssueCard(issue) {
-    const borderColor = issue.status.toLowerCase() === 'open' ? 'border-green-500' : 'border-purple-500';
-    const date = new Date(issue.createdAt).toLocaleDateString('en-US', {
+// ==================== PART 10: CREATE ONE CARD ====================
+function makeCard(issue) {
+    // Choose border color based on status
+    let borderColor = '';
+    if (issue.status.toLowerCase() === 'open') {
+        borderColor = 'border-green-500';
+    } else {
+        borderColor = 'border-purple-500';
+    }
+
+    // Format the date nicely
+    let issueDate = new Date(issue.createdAt);
+    let dateString = issueDate.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
         day: 'numeric'
     });
 
-    // Handle labels array - take first label or use 'unlabeled'
-    const primaryLabel = issue.labels && issue.labels.length > 0 ? issue.labels[0] : 'unlabeled';
+    // Get first label or use 'unlabeled'
+    let firstLabel = 'unlabeled';
+    if (issue.labels && issue.labels.length > 0) {
+        firstLabel = issue.labels[0];
+    }
 
+    // Choose priority color
+    let priorityColor = '';
+    if (issue.priority === 'high') {
+        priorityColor = 'bg-red-100 text-red-800';
+    } else if (issue.priority === 'medium') {
+        priorityColor = 'bg-yellow-100 text-yellow-800';
+    } else {
+        priorityColor = 'bg-green-100 text-green-800';
+    }
+
+    // Choose status color
+    let statusColor = '';
+    if (issue.status.toLowerCase() === 'open') {
+        statusColor = 'bg-green-100 text-green-800';
+    } else {
+        statusColor = 'bg-purple-100 text-purple-800';
+    }
+
+    // Build the card HTML
     return `
-                <div class="issue-card bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer border-t-4 ${borderColor} p-5" data-id="${issue.id}">
-                    <h3 class="font-semibold text-lg text-gray-800 mb-2 line-clamp-2">${issue.title}</h3>
-                    <p class="text-gray-600 text-sm mb-4 line-clamp-3">${issue.description || 'No description provided'}</p>
+        <div class="issue-card bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer border-t-4 ${borderColor} p-5" data-id="${issue.id}">
+            <h3 style="font-weight: 600; font-size: 1.1rem; margin-bottom: 0.5rem;">${issue.title}</h3>
+            <p style="color: #4a5568; margin-bottom: 1rem;">${issue.description || 'No description'}</p>
+            
+            <div style="font-size: 0.9rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span style="color: gray;">Author:</span>
+                    <span style="font-weight: 500;">${issue.author}</span>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span style="color: gray;">Priority:</span>
+                    <span style="padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; ${priorityColor}">${issue.priority}</span>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span style="color: gray;">Label:</span>
+                    <span style="padding: 0.25rem 0.5rem; background-color: #ebf8ff; color: #2c5282; border-radius: 9999px; font-size: 0.75rem;">${firstLabel}</span>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span style="color: gray;">Created:</span>
+                    <span>${dateString}</span>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; padding-top: 0.5rem; border-top: 1px solid #edf2f7;">
+                    <span style="color: gray;">Status:</span>
+                    <span style="padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; ${statusColor}">${issue.status}</span>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// ==================== PART 11: SHOW DETAILS IN POPUP ====================
+async function showDetails(issueId) {
+    // Show loading
+    toggleLoading(true);
+
+    try {
+        // Ask server for this specific issue
+        let response = await fetch(SERVER + '/issue/' + issueId);
+        let data = await response.json();
+
+        if (data.status === 'success') {
+            let issue = data.data;
+
+            // Set popup title
+            page.popupTitle.textContent = issue.title;
+
+            // Format dates
+            let created = new Date(issue.createdAt).toLocaleDateString('en-US', {
+                year: 'numeric', month: 'long', day: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+
+            let updated = new Date(issue.updatedAt).toLocaleDateString('en-US', {
+                year: 'numeric', month: 'long', day: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+
+            // Make labels list
+            let labelsHTML = '';
+            if (issue.labels && issue.labels.length > 0) {
+                for (let i = 0; i < issue.labels.length; i++) {
+                    labelsHTML = labelsHTML + `<span style="display: inline-block; padding: 0.25rem 0.5rem; background-color: #ebf8ff; color: #2c5282; border-radius: 9999px; font-size: 0.75rem; margin-right: 0.25rem;">${issue.labels[i]}</span>`;
+                }
+            } else {
+                labelsHTML = '<span style="color: gray;">No labels</span>';
+            }
+
+            // Priority color
+            let priorityColor = '';
+            if (issue.priority === 'high') {
+                priorityColor = 'bg-red-100 text-red-800';
+            } else if (issue.priority === 'medium') {
+                priorityColor = 'bg-yellow-100 text-yellow-800';
+            } else {
+                priorityColor = 'bg-green-100 text-green-800';
+            }
+
+            // Status color
+            let statusColor = '';
+            if (issue.status.toLowerCase() === 'open') {
+                statusColor = 'bg-green-100 text-green-800';
+            } else {
+                statusColor = 'bg-purple-100 text-purple-800';
+            }
+
+            // Build popup content
+            page.popupText.innerHTML = `
+                <div>
+                    <div style="margin-bottom: 1rem;">
+                        <h4 style="font-weight: 600; color: gray; margin-bottom: 0.25rem;">Description</h4>
+                        <p>${issue.description || 'No description'}</p>
+                    </div>
                     
-                    <div class="space-y-2 text-sm">
-                        <div class="flex items-center justify-between">
-                            <span class="text-gray-500">Author:</span>
-                            <span class="font-medium text-gray-700">${issue.author}</span>
+                    <div style="margin-bottom: 1rem;">
+                        <h4 style="font-weight: 600; color: gray; margin-bottom: 0.25rem;">Labels</h4>
+                        <div>${labelsHTML}</div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div>
+                            <h4 style="font-weight: 600; color: gray; margin-bottom: 0.25rem;">Author</h4>
+                            <p>${issue.author}</p>
                         </div>
                         
-                        <div class="flex items-center justify-between">
-                            <span class="text-gray-500">Priority:</span>
-                            <span class="px-2 py-1 rounded-full text-xs font-semibold ${issue.priority === 'high' ? 'bg-red-100 text-red-800' :
-            issue.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                'bg-green-100 text-green-800'
-        }">${issue.priority}</span>
+                        <div>
+                            <h4 style="font-weight: 600; color: gray; margin-bottom: 0.25rem;">Assignee</h4>
+                            <p>${issue.assignee || 'Unassigned'}</p>
                         </div>
                         
-                        <div class="flex items-center justify-between">
-                            <span class="text-gray-500">Label:</span>
-                            <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">${primaryLabel}</span>
+                        <div>
+                            <h4 style="font-weight: 600; color: gray; margin-bottom: 0.25rem;">Status</h4>
+                            <span style="display: inline-block; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; ${statusColor}">${issue.status}</span>
                         </div>
                         
-                        <div class="flex items-center justify-between">
-                            <span class="text-gray-500">Created:</span>
-                            <span class="text-gray-600">${date}</span>
+                        <div>
+                            <h4 style="font-weight: 600; color: gray; margin-bottom: 0.25rem;">Priority</h4>
+                            <span style="display: inline-block; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; ${priorityColor}">${issue.priority}</span>
                         </div>
                         
-                        <div class="flex items-center justify-between pt-2 border-t border-gray-100">
-                            <span class="text-gray-500">Status:</span>
-                            <span class="px-2 py-1 rounded-full text-xs font-semibold ${issue.status.toLowerCase() === 'open' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'
-        }">${issue.status}</span>
+                        <div style="grid-column: span 2;">
+                            <h4 style="font-weight: 600; color: gray; margin-bottom: 0.25rem;">Created</h4>
+                            <p>${created}</p>
+                        </div>
+                        
+                        <div style="grid-column: span 2;">
+                            <h4 style="font-weight: 600; color: gray; margin-bottom: 0.25rem;">Updated</h4>
+                            <p>${updated}</p>
                         </div>
                     </div>
                 </div>
             `;
-}
 
-// Show issue details in modal
-async function showIssueDetails(issueId) {
-    showLoading(true);
-
-    try {
-        const response = await fetch(`${API_BASE}/issue/${issueId}`);
-        const data = await response.json();
-
-        // FIXED: Check for status === 'success'
-        if (data.status === 'success') {
-            const issue = data.data;
-            modalTitle.textContent = issue.title;
-
-            const date = new Date(issue.createdAt).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-
-            // Handle labels array for modal
-            const labelsList = issue.labels && issue.labels.length > 0
-                ? issue.labels.map(label => `<span class="inline-block px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs mr-1">${label}</span>`).join('')
-                : '<span class="text-gray-500">No labels</span>';
-
-            modalContent.innerHTML = `
-                        <div class="space-y-4">
-                            <div>
-                                <h4 class="text-sm font-semibold text-gray-500 mb-1">Description</h4>
-                                <p class="text-gray-700">${issue.description || 'No description provided'}</p>
-                            </div>
-                            
-                            <div>
-                                <h4 class="text-sm font-semibold text-gray-500 mb-1">Labels</h4>
-                                <div class="flex flex-wrap gap-1">
-                                    ${labelsList}
-                                </div>
-                            </div>
-                            
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <h4 class="text-sm font-semibold text-gray-500 mb-1">Author</h4>
-                                    <p class="text-gray-700">${issue.author}</p>
-                                </div>
-                                
-                                <div>
-                                    <h4 class="text-sm font-semibold text-gray-500 mb-1">Assignee</h4>
-                                    <p class="text-gray-700">${issue.assignee || 'Unassigned'}</p>
-                                </div>
-                                
-                                <div>
-                                    <h4 class="text-sm font-semibold text-gray-500 mb-1">Status</h4>
-                                    <span class="inline-block px-2 py-1 rounded-full text-xs font-semibold ${issue.status.toLowerCase() === 'open' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'
-                }">${issue.status}</span>
-                                </div>
-                                
-                                <div>
-                                    <h4 class="text-sm font-semibold text-gray-500 mb-1">Priority</h4>
-                                    <span class="inline-block px-2 py-1 rounded-full text-xs font-semibold ${issue.priority === 'high' ? 'bg-red-100 text-red-800' :
-                    issue.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-green-100 text-green-800'
-                }">${issue.priority}</span>
-                                </div>
-                                
-                                <div class="col-span-2">
-                                    <h4 class="text-sm font-semibold text-gray-500 mb-1">Created At</h4>
-                                    <p class="text-gray-700">${date}</p>
-                                </div>
-                                
-                                <div class="col-span-2">
-                                    <h4 class="text-sm font-semibold text-gray-500 mb-1">Last Updated</h4>
-                                    <p class="text-gray-700">${new Date(issue.updatedAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                })}</p>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
+            // Show popup
+            page.popup.classList.remove('hidden');
+            page.popup.classList.add('flex');
         } else {
-            showError('Failed to load issue details');
+            alert('Could not load details');
         }
     } catch (error) {
-        console.error('Error loading issue details:', error);
-        showError('Failed to load issue details');
+        alert('Failed to load details');
     } finally {
-        showLoading(false);
+        toggleLoading(false);
     }
 }
 
-// Perform search
-async function performSearch() {
-    const searchTerm = searchInput.value.trim();
+// ==================== PART 12: SEARCH FUNCTION ====================
+async function doSearch() {
+    // Get what user typed
+    let searchWord = page.searchBox.value.trim();
 
-    if (!searchTerm) {
-        filterIssues();
+    // If empty, just show regular list
+    if (searchWord === '') {
+        updateDisplay();
         return;
     }
 
-    showLoading(true);
+    // Show loading
+    toggleLoading(true);
 
     try {
-        const response = await fetch(`${API_BASE}/issues/search?q=${encodeURIComponent(searchTerm)}`);
-        const data = await response.json();
+        // Ask server for search results
+        let response = await fetch(SERVER + '/issues/search?q=' + encodeURIComponent(searchWord));
+        let data = await response.json();
 
-        // FIXED: Check for status === 'success'
         if (data.status === 'success') {
-            filteredIssues = data.data;
-            displayIssues(filteredIssues);
-            statsText.textContent = `Search results for "${searchTerm}"`;
+            // Show search results
+            showingList = data.data;
+            showIssues(showingList);
+            page.status.textContent = 'Search results for "' + searchWord + '"';
         } else {
-            showError('Search failed: ' + (data.message || 'Unknown error'));
+            alert('Search failed');
         }
     } catch (error) {
-        console.error('Error searching issues:', error);
-        showError('Search failed. Please try again.');
+        alert('Search failed. Try again.');
     } finally {
-        showLoading(false);
+        toggleLoading(false);
     }
 }
 
-// Update statistics
-function updateStats() {
-    const openIssues = issues.filter(issue => issue.status.toLowerCase() === 'open').length;
-    const closedIssues = issues.filter(issue => issue.status.toLowerCase() === 'closed').length;
+// ==================== PART 13: HANDLE TAB CLICKS ====================
+for (let i = 0; i < page.tabButtons.length; i++) {
+    let button = page.tabButtons[i];
 
-    issueCount.textContent = issues.length;
-    openCount.textContent = openIssues;
-    closedCount.textContent = closedIssues;
+    button.onclick = function () {
+        // Remove active class from all buttons
+        for (let j = 0; j < page.tabButtons.length; j++) {
+            page.tabButtons[j].classList.remove('active', 'border-blue-500', 'text-blue-600');
+            page.tabButtons[j].classList.add('border-transparent', 'text-gray-500');
+        }
+
+        // Add active class to clicked button
+        button.classList.add('active', 'border-blue-500', 'text-blue-600');
+        button.classList.remove('border-transparent', 'text-gray-500');
+
+        // Update current tab and refresh display
+        currentTab = button.dataset.filter;
+        updateDisplay();
+    };
 }
 
-// Show/hide loading spinner
-function showLoading(show) {
-    if (show) {
-        loadingSpinner.classList.remove('hidden');
-        issuesGrid.classList.add('hidden');
-    } else {
-        loadingSpinner.classList.add('hidden');
-        issuesGrid.classList.remove('hidden');
+// ==================== PART 14: SEARCH BUTTON ====================
+page.searchBtn.onclick = doSearch;
+
+// Press Enter in search box
+page.searchBox.onkeypress = function (event) {
+    if (event.key === 'Enter') {
+        doSearch();
     }
-}
+};
 
-// Show error message
-function showError(message) {
-    alert(message);
-}
+// ==================== PART 15: LOGOUT ====================
+page.logout.onclick = function () {
+    localStorage.removeItem('isAuthenticated');
+    alert('Logged out!');
+    window.location.href = 'index.html';
+};
 
-// Helper functions (kept for reference but not needed)
-async function fetchAllIssues() {
-    const resp = await fetch(`${API_BASE}/issues`);
-    return resp.json();
-}
+// ==================== PART 16: CLOSE POPUP ====================
+page.closePopup.onclick = function () {
+    page.popup.classList.add('hidden');
+    page.popup.classList.remove('flex');
+};
 
-async function fetchIssueById(id) {
-    const resp = await fetch(`${API_BASE}/issue/${id}`);
-    return resp.json();
-}
+// Click outside popup to close
+page.popup.onclick = function (event) {
+    if (event.target === page.popup) {
+        page.popup.classList.add('hidden');
+        page.popup.classList.remove('flex');
+    }
+};
 
-async function searchIssues(query) {
-    const resp = await fetch(`${API_BASE}/issues/search?q=${encodeURIComponent(query)}`);
-    return resp.json();
+// ==================== PART 17: LOGIN CHECK ====================
+// For testing, we just auto-login
+if (!localStorage.getItem('isAuthenticated')) {
+    localStorage.setItem('isAuthenticated', 'true');
+    // window.location.href = 'index.html'; // Uncomment for real app
 }
