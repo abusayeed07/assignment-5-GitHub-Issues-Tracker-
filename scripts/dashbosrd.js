@@ -1,27 +1,19 @@
-// ==================== SUPER SIMPLE ISSUE TRACKER ====================
-// This is made for beginners - easy to read and understand!
-
-// ==================== PART 1: SETTINGS ====================
-// The website address where our data lives
 const SERVER = 'https://phi-lab-server.vercel.app/api/v1/lab';
 
-// ==================== PART 2: OUR DATA BOXES ====================
-let masterList = [];        // Holds ALL issues from server
-let showingList = [];       // Holds issues we want to show now
-let currentTab = 'all';      // Which tab is selected (all/open/closed)
+let masterList = [];        
+let showingList = [];      
+let currentTab = 'all'; 
 
-// ==================== PART 3: GRAB ALL PAGE ELEMENTS ====================
-// Think of these as remote controls for different parts of the page
 const page = {
     // Main areas
-    grid: document.getElementById('issuesGrid'),        // Where issues go
-    spinner: document.getElementById('loadingSpinner'), // Loading animation
+    grid: document.getElementById('issuesGrid'),       
+    spinner: document.getElementById('loadingSpinner'),
 
     // Numbers at top
-    total: document.getElementById('issueCount'),       // Total count
-    openNum: document.getElementById('openCount'),      // Open count
-    closedNum: document.getElementById('closedCount'),  // Closed count
-    status: document.getElementById('statsText'),       // Status message
+    total: document.getElementById('issueCount'),     
+    openNum: document.getElementById('openCount'),     
+    closedNum: document.getElementById('closedCount'),  
+    status: document.getElementById('statsText'),      
 
     // Search stuff
     searchBox: document.getElementById('searchInput'),
@@ -40,44 +32,28 @@ const page = {
     tabButtons: document.querySelectorAll('.tab-btn')
 };
 
-// ==================== PART 4: WHAT HAPPENS WHEN PAGE LOADS ====================
-// When the page finishes loading, run getIssues()
 document.addEventListener('DOMContentLoaded', getIssues);
 
-// ==================== PART 5: GET ISSUES FROM SERVER ====================
-// This function talks to the server and gets all issues
 async function getIssues() {
-    // Step 1: Show loading spinner
     toggleLoading(true);
-
-    // Step 2: Try to get data from server
+    
     try {
-        // Ask server for issues (like asking a friend for notes)
         let response = await fetch(SERVER + '/issues');
-
-        // Turn the response into something we can use
+        
         let data = await response.json();
-
-        // Step 3: Check if we got the data successfully
+        
         if (data.status === 'success') {
-            // Save all issues in our master list
             masterList = data.data;
-
-            // Update the numbers at top
             updateCounts();
 
-            // Show the issues on screen
             updateDisplay();
         } else {
-            // Something went wrong
             alert('Could not get issues: ' + (data.message || 'Unknown error'));
         }
     } catch (error) {
-        // Network error or something broke
-        alert('Failed to connect to server. Check your internet.');
-        console.log('Error details:', error);
+        alert('No internet connection. Please check your wifi.');
+        console.log('Error:', error);
     } finally {
-        // Step 4: Hide loading spinner (whether we got data or not)
         toggleLoading(false);
     }
 }
@@ -150,11 +126,11 @@ function updateDisplay() {
     }
 
     // Now put them on screen
-    showIssues(showingList);
+    displayIssues(showingList);
 }
 
 // ==================== PART 9: PUT ISSUES ON SCREEN ====================
-function showIssues(issuesToShow) {
+function displayIssues(issuesToShow) {
     // If no issues to show, display empty message
     if (issuesToShow.length === 0) {
         page.grid.innerHTML = `
@@ -377,6 +353,7 @@ async function showDetails(issueId) {
         }
     } catch (error) {
         alert('Failed to load details');
+        console.log('Error:', error);
     } finally {
         toggleLoading(false);
     }
@@ -404,13 +381,14 @@ async function doSearch() {
         if (data.status === 'success') {
             // Show search results
             showingList = data.data;
-            showIssues(showingList);
+            displayIssues(showingList);
             page.status.textContent = 'Search results for "' + searchWord + '"';
         } else {
             alert('Search failed');
         }
     } catch (error) {
         alert('Search failed. Try again.');
+        console.log('Error:', error);
     } finally {
         toggleLoading(false);
     }
