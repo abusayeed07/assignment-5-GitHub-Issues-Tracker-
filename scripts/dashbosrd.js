@@ -166,15 +166,8 @@ function displayIssues(issuesToShow) {
 }
 
 // ==================== PART 10: CREATE ONE CARD ====================
+// ==================== PART 10: CREATE ONE CARD ====================
 function makeCard(issue) {
-    // Choose border color based on status
-    let borderColor = '';
-    if (issue.status.toLowerCase() === 'open') {
-        borderColor = 'border-green-500';
-    } else {
-        borderColor = 'border-purple-500';
-    }
-
     // Format the date nicely
     let issueDate = new Date(issue.createdAt);
     let dateString = issueDate.toLocaleDateString('en-US', {
@@ -183,60 +176,117 @@ function makeCard(issue) {
         day: 'numeric'
     });
 
-    // Get first label or use 'unlabeled'
-    let firstLabel = 'unlabeled';
-    if (issue.labels && issue.labels.length > 0) {
-        firstLabel = issue.labels[0];
+    // Get first letter of author for avatar
+    let authorInitial = issue.author ? issue.author.charAt(0).toUpperCase() : '?';
+
+    // Get all labels or use empty array
+    let labels = issue.labels || [];
+    
+    // Check if issue is open or closed
+    let isOpen = issue.status.toLowerCase() === 'open';
+    
+    // Choose colors based on status (open or closed)
+    let statusColor = isOpen ? '#00A96E' : '#A855F7';
+    let statusBgClass = isOpen ? 'bg-[#00A96E]' : 'bg-[#A855F7]';
+    let statusBgLightClass = isOpen ? 'bg-[#00A96E] bg-opacity-10' : 'bg-[#A855F7] bg-opacity-10';
+    let statusTextClass = isOpen ? 'text-[#00A96E]' : 'text-[#A855F7]';
+    
+    // Choose priority bar color (using status colors)
+    let priorityBarColor = statusBgClass;
+
+    // Choose priority badge color (using status colors)
+    let priorityClass = `${statusBgLightClass} ${statusTextClass}`;
+
+    // Get label class and icon based on label text
+    function getLabelClass(label) {
+        // Use status colors for all labels
+        return `${statusBgLightClass} ${statusTextClass}`;
     }
 
-    // Choose priority color
-    let priorityColor = '';
-    if (issue.priority === 'high') {
-        priorityColor = 'bg-red-100 text-red-800';
-    } else if (issue.priority === 'medium') {
-        priorityColor = 'bg-yellow-100 text-yellow-800';
+    function getLabelIcon(label) {
+        const iconMap = {
+            'BUG': 'fas fa-bug',
+            'HELP WANTED': 'fas fa-life-ring',
+            'FEATURE': 'fas fa-star',
+            'DOCUMENTATION': 'fas fa-book',
+            'ENHANCEMENT': 'fas fa-rocket'
+        };
+        return iconMap[label.toUpperCase()] || 'fas fa-tag';
+    }
+
+    // Build the labels HTML
+    let labelsHTML = '';
+    if (labels.length > 0) {
+        // Show first 2 labels max to avoid overcrowding
+        for (let i = 0; i < Math.min(labels.length, 2); i++) {
+            let label = labels[i];
+            labelsHTML += `
+                <span class="${getLabelClass(label)} text-xs font-medium px-3 py-1.5 rounded-full flex items-center gap-1">
+                    <i class="${getLabelIcon(label)} text-xs"></i> ${label}
+                </span>
+            `;
+        }
+        // If there are more labels, show +X
+        if (labels.length > 2) {
+            labelsHTML += `
+                <span class="bg-gray-100 text-gray-600 text-xs font-medium px-3 py-1.5 rounded-full">
+                    +${labels.length - 2}
+                </span>
+            `;
+        }
     } else {
-        priorityColor = 'bg-green-100 text-green-800';
+        labelsHTML = `
+            <span class="bg-gray-100 text-gray-600 text-xs font-medium px-3 py-1.5 rounded-full">
+                No labels
+            </span>
+        `;
     }
 
-    // Choose status color
-    let statusColor = '';
-    if (issue.status.toLowerCase() === 'open') {
-        statusColor = 'bg-green-100 text-green-800';
-    } else {
-        statusColor = 'bg-purple-100 text-purple-800';
-    }
+    // Avatar color based on status
+    let avatarColor = isOpen ? 'bg-gradient-to-br from-[#A855F7] to-[#A855F7]' : 'bg-gradient-to-br from-[#00A96E] to-[#00A96E]';
 
-    // Build the card HTML
+    // Build the card HTML matching the image design
     return `
-        <div class="issue-card bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer border-t-4 ${borderColor} p-5" data-id="${issue.id}">
-            <h3 style="font-weight: 600; font-size: 1.1rem; margin-bottom: 0.5rem;">${issue.title}</h3>
-            <p style="color: #4a5568; margin-bottom: 1rem;">${issue.description || 'No description'}</p>
+        <div class="max-w-md w-full bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200 cursor-pointer hover:shadow-md transition-all duration-200 issue-card" data-id="${issue.id}">
+            <!-- Top accent bar based on status (open or closed) -->
+            <div class="h-2 ${priorityBarColor}"></div>
             
-            <div style="font-size: 0.9rem;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                    <span style="color: gray;">Author:</span>
-                    <span style="font-weight: 500;">${issue.author}</span>
+            <div class="p-6">
+                <!-- Title and priority section -->
+                <div class="flex items-start justify-between gap-4 mb-4">
+                    <h2 class="text-xl font-bold text-gray-800 flex-1">${issue.title}</h2>
+                    <span class="${priorityClass} text-xs font-bold px-3 py-1.5 rounded-full whitespace-nowrap">${issue.priority}</span>
                 </div>
                 
-                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                    <span style="color: gray;">Priority:</span>
-                    <span style="padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; ${priorityColor}">${issue.priority}</span>
+                <!-- Description -->
+                <p class="text-gray-600 text-sm mb-4 line-clamp-2">${issue.description || 'No description provided'}</p>
+                
+                <!-- Tags/Labels -->
+                <div class="flex flex-wrap gap-2 mb-4">
+                    ${labelsHTML}
                 </div>
                 
-                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                    <span style="color: gray;">Label:</span>
-                    <span style="padding: 0.25rem 0.5rem; background-color: #ebf8ff; color: #2c5282; border-radius: 9999px; font-size: 0.75rem;">${firstLabel}</span>
+                <!-- Footer with author and date -->
+                <div class="flex items-center justify-between pt-4 border-t border-gray-100">
+                    <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 ${avatarColor} rounded-full flex items-center justify-center">
+                            <span class="text-white text-xs font-bold">${authorInitial}</span>
+                        </div>
+                        <span class="text-sm text-gray-600">${issue.author}</span>
+                    </div>
+                    <div class="flex items-center gap-1 text-sm text-gray-400">
+                        <i class="far fa-calendar-alt"></i>
+                        <span>${dateString}</span>
+                    </div>
                 </div>
                 
-                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                    <span style="color: gray;">Created:</span>
-                    <span>${dateString}</span>
-                </div>
-                
-                <div style="display: flex; justify-content: space-between; padding-top: 0.5rem; border-top: 1px solid #edf2f7;">
-                    <span style="color: gray;">Status:</span>
-                    <span style="padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; ${statusColor}">${issue.status}</span>
+                <!-- Issue number and status -->
+                <div class="mt-3 text-xs text-gray-400 flex items-center justify-between">
+                    <div class="flex items-center gap-1">
+                        <i class="fas fa-hashtag"></i>
+                        <span>${issue.id} by ${issue.author}</span>
+                    </div>
+                    <span class="${statusBgLightClass} ${statusTextClass} text-xs px-3 py-1 rounded-full">${issue.status}</span>
                 </div>
             </div>
         </div>
