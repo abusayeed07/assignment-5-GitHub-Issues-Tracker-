@@ -1,0 +1,2 @@
+/* This won't remove the warning but will silence console errors */
+.tailwind-warning { display: none; }

@@ -310,108 +310,75 @@ async function showDetails(issueId) {
             // Set popup title
             page.popupTitle.textContent = issue.title;
 
-            // Format dates
+            // Format date
             let created = new Date(issue.createdAt).toLocaleDateString('en-US', {
                 year: 'numeric', 
-                month: 'short', 
-                day: 'numeric'
-            });
+                month: '2-digit', 
+                day: '2-digit'
+            }).replace(/\//g, '/');
 
             // Check if issue is open or closed
             let isOpen = issue.status.toLowerCase() === 'open';
             
-            // Set status colors based on open/closed
-            let statusColor = isOpen ? '#00A96E' : '#A855F7';
+            // Set status colors
             let statusBgClass = isOpen ? 'bg-[#00A96E]' : 'bg-[#A855F7]';
-            let statusBgLightClass = isOpen ? 'bg-[#00A96E] bg-opacity-10' : 'bg-[#A855F7] bg-opacity-10';
-            let statusTextClass = isOpen ? 'text-[#00A96E]' : 'text-[#A855F7]';
 
             // Priority color classes
             let priorityClass = '';
             if (issue.priority.toLowerCase() === 'high') {
-                priorityClass = 'bg-red-100 text-red-600';
+                priorityClass = 'text-red-600 font-bold';
             } else if (issue.priority.toLowerCase() === 'medium') {
-                priorityClass = 'bg-yellow-100 text-yellow-600';
+                priorityClass = 'text-yellow-600 font-bold';
             } else {
-                priorityClass = 'bg-green-100 text-green-600';
+                priorityClass = 'text-green-600 font-bold';
             }
 
-            // Make labels list with icons
+            // Make labels list
             let labelsHTML = '';
             if (issue.labels && issue.labels.length > 0) {
                 for (let i = 0; i < issue.labels.length; i++) {
                     let label = issue.labels[i];
-                    let icon = '';
-                    if (label.toUpperCase() === 'BUG') icon = 'fas fa-bug';
-                    else if (label.toUpperCase() === 'HELP WANTED') icon = 'fas fa-life-ring';
-                    else if (label.toUpperCase() === 'FEATURE') icon = 'fas fa-star';
-                    else if (label.toUpperCase() === 'DOCUMENTATION') icon = 'fas fa-book';
-                    else if (label.toUpperCase() === 'ENHANCEMENT') icon = 'fas fa-rocket';
-                    else icon = 'fas fa-tag';
-                    
                     labelsHTML += `
-                        <span class="bg-blue-100 text-blue-700 text-xs font-medium px-3 py-1.5 rounded-full flex items-center gap-1">
-                            <i class="${icon} text-xs"></i> ${label}
-                        </span>
+                        <span class="text-purple-600 text-sm">${label}</span>
+                        ${i < issue.labels.length - 1 ? '<span class="text-gray-300 mx-1">•</span>' : ''}
                     `;
                 }
-            } else {
-                labelsHTML = '<span class="text-gray-500 text-sm">No labels</span>';
             }
-
-            // Get first letter of author for avatar
-            let authorInitial = issue.author ? issue.author.charAt(0).toUpperCase() : '?';
 
             // Build popup content matching the image design
             page.popupText.innerHTML = `
                 <div class="space-y-6">
-                    <!-- Status and Opened info -->
-                    <div class="flex items-center gap-4">
-                        <span class="${statusBgLightClass} ${statusTextClass} text-xs font-bold px-3 py-1.5 rounded-full">${issue.status}</span>
-                        <span class="text-sm text-gray-500">
-                            <span class="font-medium text-gray-700">Opened by ${issue.author}</span> • ${created}
-                        </span>
-                    </div>
-
-                    <!-- Labels/Tags -->
-                    <div class="flex flex-wrap gap-2">
-                        ${labelsHTML}
+                    <!-- Opened by and date -->
+                    <div class="text-sm text-gray-600">
+                        <span class="font-medium">Opened by: ${issue.author}</span><br>
+                        <span>${created}</span>
                     </div>
 
                     <!-- Description -->
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <p class="text-gray-700 text-sm leading-relaxed">
-                            ${issue.description || 'No description provided.'}
-                        </p>
-                    </div>
+                    <p class="text-gray-700">
+                        ${issue.description || 'No description provided.'}
+                    </p>
 
-                    <!-- Assignee and Priority -->
-                    <div class="grid grid-cols-2 gap-4">
+                    <!-- Assignee and Priority in same line -->
+                    <div class="flex items-center gap-8">
                         <div>
-                            <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Assignee</h4>
-                            <div class="flex items-center gap-2">
-                                <div class="w-8 h-8 ${statusBgClass} rounded-full flex items-center justify-center">
-                                    <span class="text-white text-sm font-bold">${authorInitial}</span>
-                                </div>
-                                <span class="text-gray-800 font-medium">${issue.assignee || issue.author}</span>
-                            </div>
+                            <span class="font-medium text-gray-700">Assignee:</span>
+                            <span class="ml-2 text-gray-600">${issue.assignee || issue.author}</span>
                         </div>
-                        
                         <div>
-                            <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Priority</h4>
-                            <span class="${priorityClass} text-xs font-bold px-3 py-1.5 rounded-full inline-block">${issue.priority}</span>
+                            <span class="font-medium text-gray-700">Priority:</span>
+                            <span class="ml-2 ${priorityClass}">${issue.priority}</span>
                         </div>
                     </div>
 
-                    <!-- Action Buttons -->
-                    <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
-                        <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 text-sm font-medium">
-                            Cancel
-                        </button>
-                        <button class="px-4 py-2 ${statusBgClass} text-white rounded-lg hover:opacity-90 transition-opacity duration-200 text-sm font-medium">
-                            ${isOpen ? 'Close Issue' : 'Reopen Issue'}
-                        </button>
-                    </div>
+                    <!-- Labels as text with dots -->
+                    ${labelsHTML ? `
+                        <div class="flex items-center gap-1 text-sm">
+                            ${labelsHTML}
+                        </div>
+                    ` : ''}
+
+                    
                 </div>
             `;
 
