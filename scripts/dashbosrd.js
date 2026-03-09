@@ -294,6 +294,7 @@ function makeCard(issue) {
 }
 
 // ==================== PART 11: SHOW DETAILS IN POPUP ====================
+// ==================== PART 11: SHOW DETAILS IN POPUP ====================
 async function showDetails(issueId) {
     // Show loading
     toggleLoading(true);
@@ -311,86 +312,105 @@ async function showDetails(issueId) {
 
             // Format dates
             let created = new Date(issue.createdAt).toLocaleDateString('en-US', {
-                year: 'numeric', month: 'long', day: 'numeric',
-                hour: '2-digit', minute: '2-digit'
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric'
             });
 
-            let updated = new Date(issue.updatedAt).toLocaleDateString('en-US', {
-                year: 'numeric', month: 'long', day: 'numeric',
-                hour: '2-digit', minute: '2-digit'
-            });
+            // Check if issue is open or closed
+            let isOpen = issue.status.toLowerCase() === 'open';
+            
+            // Set status colors based on open/closed
+            let statusColor = isOpen ? '#00A96E' : '#A855F7';
+            let statusBgClass = isOpen ? 'bg-[#00A96E]' : 'bg-[#A855F7]';
+            let statusBgLightClass = isOpen ? 'bg-[#00A96E] bg-opacity-10' : 'bg-[#A855F7] bg-opacity-10';
+            let statusTextClass = isOpen ? 'text-[#00A96E]' : 'text-[#A855F7]';
 
-            // Make labels list
+            // Priority color classes
+            let priorityClass = '';
+            if (issue.priority.toLowerCase() === 'high') {
+                priorityClass = 'bg-red-100 text-red-600';
+            } else if (issue.priority.toLowerCase() === 'medium') {
+                priorityClass = 'bg-yellow-100 text-yellow-600';
+            } else {
+                priorityClass = 'bg-green-100 text-green-600';
+            }
+
+            // Make labels list with icons
             let labelsHTML = '';
             if (issue.labels && issue.labels.length > 0) {
                 for (let i = 0; i < issue.labels.length; i++) {
-                    labelsHTML = labelsHTML + `<span style="display: inline-block; padding: 0.25rem 0.5rem; background-color: #ebf8ff; color: #2c5282; border-radius: 9999px; font-size: 0.75rem; margin-right: 0.25rem;">${issue.labels[i]}</span>`;
+                    let label = issue.labels[i];
+                    let icon = '';
+                    if (label.toUpperCase() === 'BUG') icon = 'fas fa-bug';
+                    else if (label.toUpperCase() === 'HELP WANTED') icon = 'fas fa-life-ring';
+                    else if (label.toUpperCase() === 'FEATURE') icon = 'fas fa-star';
+                    else if (label.toUpperCase() === 'DOCUMENTATION') icon = 'fas fa-book';
+                    else if (label.toUpperCase() === 'ENHANCEMENT') icon = 'fas fa-rocket';
+                    else icon = 'fas fa-tag';
+                    
+                    labelsHTML += `
+                        <span class="bg-blue-100 text-blue-700 text-xs font-medium px-3 py-1.5 rounded-full flex items-center gap-1">
+                            <i class="${icon} text-xs"></i> ${label}
+                        </span>
+                    `;
                 }
             } else {
-                labelsHTML = '<span style="color: gray;">No labels</span>';
+                labelsHTML = '<span class="text-gray-500 text-sm">No labels</span>';
             }
 
-            // Priority color
-            let priorityColor = '';
-            if (issue.priority === 'high') {
-                priorityColor = 'bg-red-100 text-red-800';
-            } else if (issue.priority === 'medium') {
-                priorityColor = 'bg-yellow-100 text-yellow-800';
-            } else {
-                priorityColor = 'bg-green-100 text-green-800';
-            }
+            // Get first letter of author for avatar
+            let authorInitial = issue.author ? issue.author.charAt(0).toUpperCase() : '?';
 
-            // Status color
-            let statusColor = '';
-            if (issue.status.toLowerCase() === 'open') {
-                statusColor = 'bg-green-100 text-green-800';
-            } else {
-                statusColor = 'bg-purple-100 text-purple-800';
-            }
-
-            // Build popup content
+            // Build popup content matching the image design
             page.popupText.innerHTML = `
-                <div>
-                    <div style="margin-bottom: 1rem;">
-                        <h4 style="font-weight: 600; color: gray; margin-bottom: 0.25rem;">Description</h4>
-                        <p>${issue.description || 'No description'}</p>
+                <div class="space-y-6">
+                    <!-- Status and Opened info -->
+                    <div class="flex items-center gap-4">
+                        <span class="${statusBgLightClass} ${statusTextClass} text-xs font-bold px-3 py-1.5 rounded-full">${issue.status}</span>
+                        <span class="text-sm text-gray-500">
+                            <span class="font-medium text-gray-700">Opened by ${issue.author}</span> • ${created}
+                        </span>
                     </div>
-                    
-                    <div style="margin-bottom: 1rem;">
-                        <h4 style="font-weight: 600; color: gray; margin-bottom: 0.25rem;">Labels</h4>
-                        <div>${labelsHTML}</div>
+
+                    <!-- Labels/Tags -->
+                    <div class="flex flex-wrap gap-2">
+                        ${labelsHTML}
                     </div>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+
+                    <!-- Description -->
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-gray-700 text-sm leading-relaxed">
+                            ${issue.description || 'No description provided.'}
+                        </p>
+                    </div>
+
+                    <!-- Assignee and Priority -->
+                    <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <h4 style="font-weight: 600; color: gray; margin-bottom: 0.25rem;">Author</h4>
-                            <p>${issue.author}</p>
+                            <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Assignee</h4>
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 ${statusBgClass} rounded-full flex items-center justify-center">
+                                    <span class="text-white text-sm font-bold">${authorInitial}</span>
+                                </div>
+                                <span class="text-gray-800 font-medium">${issue.assignee || issue.author}</span>
+                            </div>
                         </div>
                         
                         <div>
-                            <h4 style="font-weight: 600; color: gray; margin-bottom: 0.25rem;">Assignee</h4>
-                            <p>${issue.assignee || 'Unassigned'}</p>
+                            <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Priority</h4>
+                            <span class="${priorityClass} text-xs font-bold px-3 py-1.5 rounded-full inline-block">${issue.priority}</span>
                         </div>
-                        
-                        <div>
-                            <h4 style="font-weight: 600; color: gray; margin-bottom: 0.25rem;">Status</h4>
-                            <span style="display: inline-block; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; ${statusColor}">${issue.status}</span>
-                        </div>
-                        
-                        <div>
-                            <h4 style="font-weight: 600; color: gray; margin-bottom: 0.25rem;">Priority</h4>
-                            <span style="display: inline-block; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; ${priorityColor}">${issue.priority}</span>
-                        </div>
-                        
-                        <div style="grid-column: span 2;">
-                            <h4 style="font-weight: 600; color: gray; margin-bottom: 0.25rem;">Created</h4>
-                            <p>${created}</p>
-                        </div>
-                        
-                        <div style="grid-column: span 2;">
-                            <h4 style="font-weight: 600; color: gray; margin-bottom: 0.25rem;">Updated</h4>
-                            <p>${updated}</p>
-                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                        <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 text-sm font-medium">
+                            Cancel
+                        </button>
+                        <button class="px-4 py-2 ${statusBgClass} text-white rounded-lg hover:opacity-90 transition-opacity duration-200 text-sm font-medium">
+                            ${isOpen ? 'Close Issue' : 'Reopen Issue'}
+                        </button>
                     </div>
                 </div>
             `;
