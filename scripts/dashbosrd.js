@@ -58,26 +58,20 @@ async function getIssues() {
     }
 }
 
-// ==================== PART 6: SHOW/HIDE LOADING ====================
 function toggleLoading(showIt) {
     if (showIt) {
-        // Show spinner, hide issues
         page.spinner.classList.remove('hidden');
         page.grid.classList.add('hidden');
     } else {
-        // Hide spinner, show issues
         page.spinner.classList.add('hidden');
         page.grid.classList.remove('hidden');
     }
 }
 
-// ==================== PART 7: UPDATE NUMBERS AT TOP ====================
 function updateCounts() {
-    // Count how many are open
     let openTotal = 0;
     let closedTotal = 0;
 
-    // Loop through all issues and count them
     for (let i = 0; i < masterList.length; i++) {
         let oneIssue = masterList[i];
         if (oneIssue.status.toLowerCase() === 'open') {
@@ -87,20 +81,15 @@ function updateCounts() {
         }
     }
 
-    // Put the numbers on screen
     page.total.textContent = masterList.length;
     page.openNum.textContent = openTotal;
     page.closedNum.textContent = closedTotal;
 }
 
-// ==================== PART 8: DECIDE WHAT TO SHOW ====================
 function updateDisplay() {
-    // Clear the showing list
     showingList = [];
 
-    // Decide which issues to show based on selected tab
     if (currentTab === 'open') {
-        // Show only open issues
         for (let i = 0; i < masterList.length; i++) {
             if (masterList[i].status.toLowerCase() === 'open') {
                 showingList.push(masterList[i]);
@@ -109,7 +98,6 @@ function updateDisplay() {
         page.status.textContent = 'Showing open issues';
     }
     else if (currentTab === 'closed') {
-        // Show only closed issues
         for (let i = 0; i < masterList.length; i++) {
             if (masterList[i].status.toLowerCase() === 'closed') {
                 showingList.push(masterList[i]);
@@ -118,20 +106,16 @@ function updateDisplay() {
         page.status.textContent = 'Showing closed issues';
     }
     else {
-        // Show all issues
         for (let i = 0; i < masterList.length; i++) {
             showingList.push(masterList[i]);
         }
         page.status.textContent = 'Showing all issues';
     }
 
-    // Now put them on screen
     displayIssues(showingList);
 }
 
-// ==================== PART 9: PUT ISSUES ON SCREEN ====================
 function displayIssues(issuesToShow) {
-    // If no issues to show, display empty message
     if (issuesToShow.length === 0) {
         page.grid.innerHTML = `
             <div style="text-align: center; padding: 3rem; grid-column: span 4;">
@@ -140,20 +124,14 @@ function displayIssues(issuesToShow) {
         `;
         return;
     }
-
-    // Start with empty string, then add each issue
     let allCards = '';
 
-    // Loop through each issue and make a card
     for (let i = 0; i < issuesToShow.length; i++) {
         let issue = issuesToShow[i];
         allCards = allCards + makeCard(issue);
     }
-
-    // Put all cards on the page at once
     page.grid.innerHTML = allCards;
 
-    // Make each card clickable
     let cards = document.querySelectorAll('.issue-card');
     for (let i = 0; i < cards.length; i++) {
         let card = cards[i];
@@ -165,41 +143,28 @@ function displayIssues(issuesToShow) {
     }
 }
 
-// ==================== PART 10: CREATE ONE CARD ====================
-// ==================== PART 10: CREATE ONE CARD ====================
 function makeCard(issue) {
-    // Format the date nicely
     let issueDate = new Date(issue.createdAt);
     let dateString = issueDate.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
         day: 'numeric'
     });
-
-    // Get first letter of author for avatar
     let authorInitial = issue.author ? issue.author.charAt(0).toUpperCase() : '?';
-
-    // Get all labels or use empty array
     let labels = issue.labels || [];
     
-    // Check if issue is open or closed
     let isOpen = issue.status.toLowerCase() === 'open';
     
-    // Choose colors based on status (open or closed)
     let statusColor = isOpen ? '#00A96E' : '#A855F7';
     let statusBgClass = isOpen ? 'bg-[#00A96E]' : 'bg-[#A855F7]';
     let statusBgLightClass = isOpen ? 'bg-[#00A96E] bg-opacity-10' : 'bg-[#A855F7] bg-opacity-10';
     let statusTextClass = isOpen ? 'text-[#00A96E]' : 'text-[#A855F7]';
-    
-    // Choose priority bar color (using status colors)
+
     let priorityBarColor = statusBgClass;
 
-    // Choose priority badge color (using status colors)
     let priorityClass = `${statusBgLightClass} ${statusTextClass}`;
 
-    // Get label class and icon based on label text
     function getLabelClass(label) {
-        // Use status colors for all labels
         return `${statusBgLightClass} ${statusTextClass}`;
     }
 
@@ -214,10 +179,8 @@ function makeCard(issue) {
         return iconMap[label.toUpperCase()] || 'fas fa-tag';
     }
 
-    // Build the labels HTML
     let labelsHTML = '';
     if (labels.length > 0) {
-        // Show first 2 labels max to avoid overcrowding
         for (let i = 0; i < Math.min(labels.length, 2); i++) {
             let label = labels[i];
             labelsHTML += `
@@ -226,7 +189,6 @@ function makeCard(issue) {
                 </span>
             `;
         }
-        // If there are more labels, show +X
         if (labels.length > 2) {
             labelsHTML += `
                 <span class="bg-gray-100 text-gray-600 text-xs font-medium px-3 py-1.5 rounded-full">
@@ -242,10 +204,8 @@ function makeCard(issue) {
         `;
     }
 
-    // Avatar color based on status
     let avatarColor = isOpen ? 'bg-gradient-to-br from-[#A855F7] to-[#A855F7]' : 'bg-gradient-to-br from-[#00A96E] to-[#00A96E]';
 
-    // Build the card HTML matching the image design
     return `
         <div class="max-w-md w-full bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200 cursor-pointer hover:shadow-md transition-all duration-200 issue-card" data-id="${issue.id}">
             <!-- Top accent bar based on status (open or closed) -->
@@ -293,37 +253,28 @@ function makeCard(issue) {
     `;
 }
 
-// ==================== PART 11: SHOW DETAILS IN POPUP ====================
-// ==================== PART 11: SHOW DETAILS IN POPUP ====================
 async function showDetails(issueId) {
-    // Show loading
     toggleLoading(true);
 
     try {
-        // Ask server for this specific issue
         let response = await fetch(SERVER + '/issue/' + issueId);
         let data = await response.json();
 
         if (data.status === 'success') {
             let issue = data.data;
 
-            // Set popup title
             page.popupTitle.textContent = issue.title;
 
-            // Format date
             let created = new Date(issue.createdAt).toLocaleDateString('en-US', {
                 year: 'numeric', 
                 month: '2-digit', 
                 day: '2-digit'
             }).replace(/\//g, '/');
 
-            // Check if issue is open or closed
             let isOpen = issue.status.toLowerCase() === 'open';
-            
-            // Set status colors
+
             let statusBgClass = isOpen ? 'bg-[#00A96E]' : 'bg-[#A855F7]';
 
-            // Priority color classes
             let priorityClass = '';
             if (issue.priority.toLowerCase() === 'high') {
                 priorityClass = 'text-red-600 font-bold';
@@ -333,7 +284,6 @@ async function showDetails(issueId) {
                 priorityClass = 'text-green-600 font-bold';
             }
 
-            // Make labels list
             let labelsHTML = '';
             if (issue.labels && issue.labels.length > 0) {
                 for (let i = 0; i < issue.labels.length; i++) {
@@ -345,7 +295,6 @@ async function showDetails(issueId) {
                 }
             }
 
-            // Build popup content matching the image design
             page.popupText.innerHTML = `
                 <div class="space-y-6">
                     <!-- Opened by and date -->
@@ -382,7 +331,6 @@ async function showDetails(issueId) {
                 </div>
             `;
 
-            // Show popup
             page.popup.classList.remove('hidden');
             page.popup.classList.add('flex');
         } else {
@@ -396,27 +344,21 @@ async function showDetails(issueId) {
     }
 }
 
-// ==================== PART 12: SEARCH FUNCTION ====================
 async function doSearch() {
-    // Get what user typed
     let searchWord = page.searchBox.value.trim();
 
-    // If empty, just show regular list
     if (searchWord === '') {
         updateDisplay();
         return;
     }
 
-    // Show loading
     toggleLoading(true);
 
     try {
-        // Ask server for search results
         let response = await fetch(SERVER + '/issues/search?q=' + encodeURIComponent(searchWord));
         let data = await response.json();
 
         if (data.status === 'success') {
-            // Show search results
             showingList = data.data;
             displayIssues(showingList);
             page.status.textContent = 'Search results for "' + searchWord + '"';
@@ -431,51 +373,41 @@ async function doSearch() {
     }
 }
 
-// ==================== PART 13: HANDLE TAB CLICKS ====================
 for (let i = 0; i < page.tabButtons.length; i++) {
     let button = page.tabButtons[i];
 
     button.onclick = function () {
-        // Remove active class from all buttons
         for (let j = 0; j < page.tabButtons.length; j++) {
             page.tabButtons[j].classList.remove('active', 'border-blue-500', 'text-blue-600');
             page.tabButtons[j].classList.add('border-transparent', 'text-gray-500');
         }
 
-        // Add active class to clicked button
         button.classList.add('active', 'border-blue-500', 'text-blue-600');
         button.classList.remove('border-transparent', 'text-gray-500');
 
-        // Update current tab and refresh display
         currentTab = button.dataset.filter;
         updateDisplay();
     };
 }
-
-// ==================== PART 14: SEARCH BUTTON ====================
 page.searchBtn.onclick = doSearch;
 
-// Press Enter in search box
 page.searchBox.onkeypress = function (event) {
     if (event.key === 'Enter') {
         doSearch();
     }
 };
 
-// ==================== PART 15: LOGOUT ====================
 page.logout.onclick = function () {
     localStorage.removeItem('isAuthenticated');
     alert('Logged out!');
     window.location.href = 'index.html';
 };
 
-// ==================== PART 16: CLOSE POPUP ====================
 page.closePopup.onclick = function () {
     page.popup.classList.add('hidden');
     page.popup.classList.remove('flex');
 };
 
-// Click outside popup to close
 page.popup.onclick = function (event) {
     if (event.target === page.popup) {
         page.popup.classList.add('hidden');
@@ -483,9 +415,6 @@ page.popup.onclick = function (event) {
     }
 };
 
-// ==================== PART 17: LOGIN CHECK ====================
-// For testing, we just auto-login
 if (!localStorage.getItem('isAuthenticated')) {
     localStorage.setItem('isAuthenticated', 'true');
-    // window.location.href = 'index.html'; // Uncomment for real app
 }
